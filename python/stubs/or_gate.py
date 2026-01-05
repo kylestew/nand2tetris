@@ -22,9 +22,6 @@ def or_gate(a: bool, b: bool) -> bool:
         1 | 1 |  1
 
     Allowed chips: nand, not_gate, and_gate
-    Hint: De Morgan's law: NOT(NOT(a) AND NOT(b)) = a OR b
-          Or think about it: NAND(NOT(a), NOT(b)) = ?
+    Hint: De Morgan's law is interesting here
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("or_gate")
-

@@ -25,8 +25,5 @@ def not16(a: tuple[bool, ...]) -> tuple[bool, ...]:
     Indexing: a[0] is LSB, a[15] is MSB
 
     Allowed chips: all basic gates
-    Hint: Apply not_gate to each bit individually.
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("not16")
-

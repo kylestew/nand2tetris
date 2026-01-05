@@ -642,91 +642,27 @@ def print_single_result(result: TestResult, test: ChipTest):
     print()
 
 
-def format_bool_table(val: Any) -> str:
-    """Format a boolean as 0/1 for truth table display."""
-    if val is None:
-        return "?"
-    if isinstance(val, bool):
-        return "1" if val else "0"
-    return str(val)
-
-
-def print_failed_cases(failed_cases: list[FailedCase], max_show: int = 5):
-    """Print failed test cases as a truth table."""
+def print_failed_cases(failed_cases: list[FailedCase], max_show: int = 3):
+    """Print failed test cases."""
     print()
     shown = min(len(failed_cases), max_show)
     remaining = len(failed_cases) - shown
 
-    # Determine the structure from the first failed case
-    fc = failed_cases[0]
-    num_inputs = len(fc.inputs)
+    print(
+        f"{Colors.DIM}Failed cases (showing {shown} of {len(failed_cases)}):{Colors.RESET}"
+    )
 
-    # Check if inputs are simple bools or tuples (buses)
-    simple_inputs = all(isinstance(inp, bool) for inp in fc.inputs)
-    simple_output = isinstance(fc.expected, bool)
-
-    if simple_inputs and simple_output:
-        # Simple truth table format for basic gates
-        if num_inputs == 1:
-            headers = ["a", "exp", "got"]
-        elif num_inputs == 2:
-            headers = ["a", "b", "exp", "got"]
-        elif num_inputs == 3:
-            headers = ["a", "b", "sel", "exp", "got"]
-        else:
-            headers = [f"i{i}" for i in range(num_inputs)] + ["exp", "got"]
-
-        # Print header
-        col_width = 3
-        header_line = " | ".join(h.center(col_width) for h in headers)
-        sep_line = "-+-".join("-" * col_width for _ in headers)
-
-        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
-        print(f"    {header_line}")
-        print(f"    {sep_line}")
-
-        # Print rows
-        for fc in failed_cases[:max_show]:
-            row = []
-            for inp in fc.inputs:
-                row.append(format_bool_table(inp).center(col_width))
-            row.append(format_bool_table(fc.expected).center(col_width))
-            got_val = format_bool_table(fc.actual)
-            row.append(f"{Colors.RED}{got_val.center(col_width)}{Colors.RESET}")
-            print(f"    {' | '.join(row)}  ✗")
-
-    elif isinstance(fc.expected, tuple) and len(fc.expected) <= 8:
-        # Output is a small tuple (like DMUX) - show in table format
-        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
-        print(f"    {'input':<15} | {'expected':<15} | {'got':<15}")
-        print(f"    {'-' * 15}-+-{'-' * 15}-+-{'-' * 15}")
-
-        for fc in failed_cases[:max_show]:
-            # Format inputs
-            inp_parts = [format_bool_table(x) for x in fc.inputs]
-            inp_str = ", ".join(inp_parts)
-            # Format expected/got as binary string
-            exp_str = "".join(format_bool_table(x) for x in fc.expected)
-            got_str = (
-                "".join(format_bool_table(x) for x in fc.actual)
-                if fc.actual
-                else "None"
-            )
-            print(
-                f"    {inp_str:<15} | {exp_str:<15} | {Colors.RED}{got_str:<15}{Colors.RESET}  ✗"
-            )
-
-    else:
-        # Complex case (16-bit buses) - use detailed format
-        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
-        for fc in failed_cases[:max_show]:
-            print(f"    Input:    {format_inputs(fc.inputs)}")
-            print(f"    Expected: {format_value(fc.expected)}")
-            print(f"    Got:      {Colors.RED}{format_value(fc.actual)}{Colors.RESET}")
+    for fc in failed_cases[:max_show]:
+        print(f"  {Colors.DIM}Input:{Colors.RESET}    {format_inputs(fc.inputs)}")
+        print(f"  {Colors.DIM}Expected:{Colors.RESET} {format_value(fc.expected)}")
+        print(
+            f"  {Colors.DIM}Got:{Colors.RESET}      {Colors.RED}{format_value(fc.actual)}{Colors.RESET}"
+        )
+        if fc != failed_cases[min(max_show, len(failed_cases)) - 1]:
             print()
 
     if remaining > 0:
-        print(f"    {Colors.DIM}... and {remaining} more{Colors.RESET}")
+        print(f"  {Colors.DIM}... and {remaining} more failed case(s){Colors.RESET}")
 
 
 # =============================================================================

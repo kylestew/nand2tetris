@@ -30,10 +30,5 @@ def or8way(inp: tuple[bool, ...]) -> bool:
     Indexing: inp[0] is LSB, inp[7] is MSB
 
     Allowed chips: all previous chips
-    Hint: Chain OR gates together, or build a tree:
-          OR(OR(OR(inp[0],inp[1]), OR(inp[2],inp[3])), 
-             OR(OR(inp[4],inp[5]), OR(inp[6],inp[7])))
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("or8way")
-

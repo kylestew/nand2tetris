@@ -30,9 +30,5 @@ def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
     Returns: (a, b) tuple
 
     Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux
-    Hint: a = inp AND NOT(sel)
-          b = inp AND sel
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("dmux")
-

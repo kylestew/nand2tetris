@@ -36,10 +36,5 @@ def dmux4way(inp: bool, sel: tuple[bool, bool]) -> tuple[bool, bool, bool, bool]
     Output: (a, b, c, d) - four single bits
 
     Allowed chips: all previous chips
-    Hint: Use dmux twice in stages:
-          Stage 1: dmux(inp, sel[1]) -> routes to upper or lower pair
-          Stage 2: dmux each result with sel[0]
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("dmux4way")
-

@@ -32,8 +32,5 @@ def mux16(a: tuple[bool, ...], b: tuple[bool, ...], sel: bool) -> tuple[bool, ..
     Indexing: [0] is LSB, [15] is MSB
 
     Allowed chips: all basic gates, not16, and16, or16
-    Hint: Apply mux to each pair of bits with the same sel.
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("mux16")
-

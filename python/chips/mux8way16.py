@@ -49,8 +49,5 @@ def mux8way16(
     Output: out[16] - 16-bit bus
 
     Allowed chips: all previous chips
-    Hint: Use mux4way16 twice (for a-d and e-h), then mux16 to select between them.
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("mux8way16")
-

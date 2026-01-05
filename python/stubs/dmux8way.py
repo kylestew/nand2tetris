@@ -43,8 +43,5 @@ def dmux8way(
     Output: (a, b, c, d, e, f, g, h) - eight single bits
 
     Allowed chips: all previous chips
-    Hint: Use dmux to split into upper/lower half, then dmux4way on each half.
     """
-    # DELETE THIS LINE AND IMPLEMENT:
     raise NotImplementedError("dmux8way")
-
