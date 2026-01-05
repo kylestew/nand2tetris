@@ -401,6 +401,15 @@ CHIP_TESTS: list[ChipTest] = [
 
 
 @dataclass
+class FailedCase:
+    """A single failed test case."""
+
+    inputs: tuple
+    expected: Any
+    actual: Any
+
+
+@dataclass
 class TestResult:
     """Result of testing a single chip."""
 
@@ -410,6 +419,7 @@ class TestResult:
     passed_cases: int
     error: Optional[str] = None
     not_implemented: bool = False
+    failed_cases: Optional[list[FailedCase]] = None
 
 
 def test_chip(test: ChipTest) -> TestResult:
@@ -439,6 +449,7 @@ def test_chip(test: ChipTest) -> TestResult:
 
     passed_cases = 0
     total_cases = len(test.truth_table)
+    failed_cases: list[FailedCase] = []
 
     for case in test.truth_table:
         *inputs, expected = case
@@ -446,6 +457,8 @@ def test_chip(test: ChipTest) -> TestResult:
             result = func(*inputs)
             if result == expected:
                 passed_cases += 1
+            else:
+                failed_cases.append(FailedCase(tuple(inputs), expected, result))
         except NotImplementedError:
             # Stub raises NotImplementedError - not started yet
             return TestResult(
@@ -462,6 +475,7 @@ def test_chip(test: ChipTest) -> TestResult:
                 total_cases=total_cases,
                 passed_cases=passed_cases,
                 error=f"{type(e).__name__}: {e}",
+                failed_cases=failed_cases if failed_cases else None,
             )
 
     return TestResult(
@@ -469,12 +483,36 @@ def test_chip(test: ChipTest) -> TestResult:
         passed=passed_cases == total_cases,
         total_cases=total_cases,
         passed_cases=passed_cases,
+        failed_cases=failed_cases if failed_cases else None,
     )
 
 
 # =============================================================================
 # DISPLAY
 # =============================================================================
+
+
+def format_value(val: Any) -> str:
+    """Format a value for display, truncating long tuples (buses)."""
+    if isinstance(val, tuple):
+        if len(val) > 8:
+            # Long bus - show as hex-ish representation
+            bits = "".join("1" if b else "0" for b in val)
+            return f"0b{bits[:4]}...{bits[-4:]} ({len(val)}-bit)"
+        elif len(val) > 4:
+            # Medium tuple - truncate middle
+            return f"({val[0]}, {val[1]}, ..., {val[-1]})"
+        else:
+            return str(val)
+    elif val is None:
+        return "None"
+    else:
+        return str(val)
+
+
+def format_inputs(inputs: tuple) -> str:
+    """Format input tuple for display."""
+    return ", ".join(format_value(inp) for inp in inputs)
 
 
 # ANSI colors
@@ -585,15 +623,110 @@ def print_single_result(result: TestResult, test: ChipTest):
             f"{Colors.GREEN}✓ PASSED{Colors.RESET} - All {result.total_cases} test cases passed!"
         )
     elif result.not_implemented:
-        print(f"{Colors.YELLOW}○ NOT IMPLEMENTED{Colors.RESET} - Function returns None")
+        print(
+            f"{Colors.YELLOW}○ NOT IMPLEMENTED{Colors.RESET} - Chip raises NotImplementedError"
+        )
         print(f"  Edit chips/{test.name}.py to implement this chip.")
     elif result.error:
         print(f"{Colors.RED}✗ ERROR{Colors.RESET} - {result.error}")
+        # Show failed cases even if there was an error
+        if result.failed_cases:
+            print_failed_cases(result.failed_cases)
     else:
         print(
             f"{Colors.YELLOW}✗ FAILED{Colors.RESET} - {result.passed_cases}/{result.total_cases} cases passed"
         )
+        # Show failed cases
+        if result.failed_cases:
+            print_failed_cases(result.failed_cases)
     print()
+
+
+def format_bool_table(val: Any) -> str:
+    """Format a boolean as 0/1 for truth table display."""
+    if val is None:
+        return "?"
+    if isinstance(val, bool):
+        return "1" if val else "0"
+    return str(val)
+
+
+def print_failed_cases(failed_cases: list[FailedCase], max_show: int = 5):
+    """Print failed test cases as a truth table."""
+    print()
+    shown = min(len(failed_cases), max_show)
+    remaining = len(failed_cases) - shown
+
+    # Determine the structure from the first failed case
+    fc = failed_cases[0]
+    num_inputs = len(fc.inputs)
+
+    # Check if inputs are simple bools or tuples (buses)
+    simple_inputs = all(isinstance(inp, bool) for inp in fc.inputs)
+    simple_output = isinstance(fc.expected, bool)
+
+    if simple_inputs and simple_output:
+        # Simple truth table format for basic gates
+        if num_inputs == 1:
+            headers = ["a", "exp", "got"]
+        elif num_inputs == 2:
+            headers = ["a", "b", "exp", "got"]
+        elif num_inputs == 3:
+            headers = ["a", "b", "sel", "exp", "got"]
+        else:
+            headers = [f"i{i}" for i in range(num_inputs)] + ["exp", "got"]
+
+        # Print header
+        col_width = 3
+        header_line = " | ".join(h.center(col_width) for h in headers)
+        sep_line = "-+-".join("-" * col_width for _ in headers)
+
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        print(f"    {header_line}")
+        print(f"    {sep_line}")
+
+        # Print rows
+        for fc in failed_cases[:max_show]:
+            row = []
+            for inp in fc.inputs:
+                row.append(format_bool_table(inp).center(col_width))
+            row.append(format_bool_table(fc.expected).center(col_width))
+            got_val = format_bool_table(fc.actual)
+            row.append(f"{Colors.RED}{got_val.center(col_width)}{Colors.RESET}")
+            print(f"    {' | '.join(row)}  ✗")
+
+    elif isinstance(fc.expected, tuple) and len(fc.expected) <= 8:
+        # Output is a small tuple (like DMUX) - show in table format
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        print(f"    {'input':<15} | {'expected':<15} | {'got':<15}")
+        print(f"    {'-' * 15}-+-{'-' * 15}-+-{'-' * 15}")
+
+        for fc in failed_cases[:max_show]:
+            # Format inputs
+            inp_parts = [format_bool_table(x) for x in fc.inputs]
+            inp_str = ", ".join(inp_parts)
+            # Format expected/got as binary string
+            exp_str = "".join(format_bool_table(x) for x in fc.expected)
+            got_str = (
+                "".join(format_bool_table(x) for x in fc.actual)
+                if fc.actual
+                else "None"
+            )
+            print(
+                f"    {inp_str:<15} | {exp_str:<15} | {Colors.RED}{got_str:<15}{Colors.RESET}  ✗"
+            )
+
+    else:
+        # Complex case (16-bit buses) - use detailed format
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        for fc in failed_cases[:max_show]:
+            print(f"    Input:    {format_inputs(fc.inputs)}")
+            print(f"    Expected: {format_value(fc.expected)}")
+            print(f"    Got:      {Colors.RED}{format_value(fc.actual)}{Colors.RESET}")
+            print()
+
+    if remaining > 0:
+        print(f"    {Colors.DIM}... and {remaining} more{Colors.RESET}")
 
 
 # =============================================================================

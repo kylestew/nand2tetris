@@ -25,6 +25,5 @@ def or_gate(a: bool, b: bool) -> bool:
     Hint: De Morgan's law: NOT(NOT(a) AND NOT(b)) = a OR b
           Or think about it: NAND(NOT(a), NOT(b)) = ?
     """
-    # DELETE THIS LINE AND IMPLEMENT:
-    raise NotImplementedError("or_gate")
+    return nand(not_gate(a), not_gate(b))
 

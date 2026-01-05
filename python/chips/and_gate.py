@@ -23,6 +23,5 @@ def and_gate(a: bool, b: bool) -> bool:
     Allowed chips: nand, not_gate
     Hint: NAND is NOT-AND. How do you undo the NOT?
     """
-    # DELETE THIS LINE AND IMPLEMENT:
-    raise NotImplementedError("and_gate")
+    return not_gate(nand(a, b))
 
