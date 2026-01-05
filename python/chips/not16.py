@@ -26,4 +26,21 @@ def not16(a: tuple[bool, ...]) -> tuple[bool, ...]:
 
     Allowed chips: all basic gates
     """
-    raise NotImplementedError("not16")
+    return (
+        not_gate(a[0]),
+        not_gate(a[1]),
+        not_gate(a[2]),
+        not_gate(a[3]),
+        not_gate(a[4]),
+        not_gate(a[5]),
+        not_gate(a[6]),
+        not_gate(a[7]),
+        not_gate(a[8]),
+        not_gate(a[9]),
+        not_gate(a[10]),
+        not_gate(a[11]),
+        not_gate(a[12]),
+        not_gate(a[13]),
+        not_gate(a[14]),
+        not_gate(a[15]),
+    )

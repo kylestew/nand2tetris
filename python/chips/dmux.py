@@ -31,4 +31,4 @@ def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
 
     Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux
     """
-    raise NotImplementedError("dmux")
+    return (and_gate(inp, not_gate(sel)), and_gate(inp, sel))

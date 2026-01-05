@@ -14,6 +14,7 @@ Usage:
 """
 
 import sys
+import time
 import shutil
 import importlib
 import argparse
@@ -21,7 +22,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable, Any, Optional
 
-from chip_linter import lint_chips_directory, print_lint_results, CHIP_ORDER
+from chip_linter import lint_chips_directory, lint_file, print_lint_results, CHIP_ORDER
 
 
 # =============================================================================
@@ -642,27 +643,88 @@ def print_single_result(result: TestResult, test: ChipTest):
     print()
 
 
-def print_failed_cases(failed_cases: list[FailedCase], max_show: int = 3):
-    """Print failed test cases."""
+def format_bool_table(val: Any) -> str:
+    """Format a boolean as 0/1 for truth table display."""
+    if val is None:
+        return "?"
+    if isinstance(val, bool):
+        return "1" if val else "0"
+    return str(val)
+
+
+def print_failed_cases(failed_cases: list[FailedCase], max_show: int = 5):
+    """Print failed test cases as a truth table."""
     print()
     shown = min(len(failed_cases), max_show)
     remaining = len(failed_cases) - shown
 
-    print(
-        f"{Colors.DIM}Failed cases (showing {shown} of {len(failed_cases)}):{Colors.RESET}"
-    )
+    fc = failed_cases[0]
+    num_inputs = len(fc.inputs)
 
-    for fc in failed_cases[:max_show]:
-        print(f"  {Colors.DIM}Input:{Colors.RESET}    {format_inputs(fc.inputs)}")
-        print(f"  {Colors.DIM}Expected:{Colors.RESET} {format_value(fc.expected)}")
-        print(
-            f"  {Colors.DIM}Got:{Colors.RESET}      {Colors.RED}{format_value(fc.actual)}{Colors.RESET}"
-        )
-        if fc != failed_cases[min(max_show, len(failed_cases)) - 1]:
+    # Check if inputs are simple bools
+    simple_inputs = all(isinstance(inp, bool) for inp in fc.inputs)
+    simple_output = isinstance(fc.expected, bool)
+
+    if simple_inputs and simple_output:
+        # Truth table format for basic gates
+        if num_inputs == 1:
+            headers = ["a", "exp", "got"]
+        elif num_inputs == 2:
+            headers = ["a", "b", "exp", "got"]
+        elif num_inputs == 3:
+            headers = ["a", "b", "sel", "exp", "got"]
+        else:
+            headers = [f"i{i}" for i in range(num_inputs)] + ["exp", "got"]
+
+        col_width = 3
+        header_line = " | ".join(h.center(col_width) for h in headers)
+        sep_line = "-+-".join("-" * col_width for _ in headers)
+
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        print(f"    {header_line}")
+        print(f"    {sep_line}")
+
+        for fc in failed_cases[:max_show]:
+            row = []
+            for inp in fc.inputs:
+                row.append(format_bool_table(inp).center(col_width))
+            row.append(format_bool_table(fc.expected).center(col_width))
+            got_val = format_bool_table(fc.actual)
+            row.append(f"{Colors.RED}{got_val.center(col_width)}{Colors.RESET}")
+            print(f"    {' | '.join(row)}  ✗")
+
+    elif isinstance(fc.expected, tuple) and len(fc.expected) <= 8:
+        # Output is a small tuple (like DMUX)
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        print(f"    {'input':<15} | {'expected':<15} | {'got':<15}")
+        print(f"    {'-' * 15}-+-{'-' * 15}-+-{'-' * 15}")
+
+        for fc in failed_cases[:max_show]:
+            inp_parts = [format_bool_table(x) for x in fc.inputs]
+            inp_str = ", ".join(inp_parts)
+            exp_str = "".join(format_bool_table(x) for x in fc.expected)
+            # Handle case where actual is wrong type (not a tuple)
+            if fc.actual is None:
+                got_str = "None"
+            elif isinstance(fc.actual, tuple):
+                got_str = "".join(format_bool_table(x) for x in fc.actual)
+            else:
+                got_str = str(fc.actual)
+            print(
+                f"    {inp_str:<15} | {exp_str:<15} | {Colors.RED}{got_str:<15}{Colors.RESET}  ✗"
+            )
+
+    else:
+        # Complex case (16-bit buses)
+        print(f"  {Colors.DIM}Failed cases:{Colors.RESET}")
+        for fc in failed_cases[:max_show]:
+            print(f"    Input:    {format_inputs(fc.inputs)}")
+            print(f"    Expected: {format_value(fc.expected)}")
+            print(f"    Got:      {Colors.RED}{format_value(fc.actual)}{Colors.RESET}")
             print()
 
     if remaining > 0:
-        print(f"  {Colors.DIM}... and {remaining} more failed case(s){Colors.RESET}")
+        print(f"    {Colors.DIM}... and {remaining} more{Colors.RESET}")
 
 
 # =============================================================================
@@ -706,6 +768,79 @@ def restart_chips():
 
 
 # =============================================================================
+# WATCH MODE
+# =============================================================================
+
+
+def handle_file_change(filepath: Path):
+    """Handle a changed chip file - lint and test it."""
+    chip_name = filepath.stem
+    if chip_name in ("__init__", "nand"):
+        return
+
+    print(f"\n{'=' * 60}")
+    print(f"  {Colors.CYAN}CHANGED:{Colors.RESET} {filepath.name}")
+    print(f"{'=' * 60}")
+
+    # Lint first
+    violations = lint_file(filepath)
+    if violations:
+        print()
+        print_lint_results({chip_name: violations})
+        print(f"\n{Colors.DIM}Watching for changes...{Colors.RESET}")
+        return
+
+    # Find and run test for the changed chip
+    test = next((t for t in CHIP_TESTS if t.name == chip_name), None)
+    if test:
+        result = test_chip(test)
+        print_single_result(result, test)
+
+        # If passed, run all tests to show updated progress
+        if result.passed:
+            print(f"{Colors.GREEN}Running all verifications...{Colors.RESET}\n")
+            print_header()
+            all_results = [test_chip(t) for t in CHIP_TESTS]
+            print_results(all_results)
+
+    print(f"{Colors.DIM}Watching for changes...{Colors.RESET}")
+
+
+def watch_mode():
+    """Watch chips/ directory and re-run tests on changes."""
+    # Show initial status
+    print_header()
+    results = [test_chip(test) for test in CHIP_TESTS]
+    print_results(results)
+
+    print(f"{Colors.CYAN}Watching chips/ for changes... (Ctrl+C to stop){Colors.RESET}")
+    print()
+
+    # Track file modification times
+    mtimes: dict[Path, float] = {}
+    for f in CHIPS_DIR.glob("*.py"):
+        try:
+            mtimes[f] = f.stat().st_mtime
+        except OSError:
+            pass
+
+    try:
+        while True:
+            time.sleep(0.5)
+
+            for filepath in CHIPS_DIR.glob("*.py"):
+                try:
+                    current_mtime = filepath.stat().st_mtime
+                    if filepath not in mtimes or mtimes[filepath] < current_mtime:
+                        mtimes[filepath] = current_mtime
+                        handle_file_change(filepath)
+                except OSError:
+                    pass
+    except KeyboardInterrupt:
+        print(f"\n{Colors.DIM}Stopped watching.{Colors.RESET}")
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -718,12 +853,16 @@ def main():
 Examples:
   python test_harness.py           Run all tests
   python test_harness.py not       Test specific chip
+  python test_harness.py --watch       Watch mode - re-run on file changes
   python test_harness.py --lint-only   Lint only, no tests
   python test_harness.py --restart     Reset all chips to stubs
         """,
     )
     parser.add_argument(
         "chip", nargs="?", help="Specific chip to test (e.g., 'not', 'mux16')"
+    )
+    parser.add_argument(
+        "--watch", action="store_true", help="Watch chips/ and re-run tests on changes"
     )
     parser.add_argument(
         "--lint-only", action="store_true", help="Run linter only, skip tests"
@@ -740,6 +879,11 @@ Examples:
     # Handle restart
     if args.restart:
         restart_chips()
+        return
+
+    # Handle watch mode
+    if args.watch:
+        watch_mode()
         return
 
     # Run linter first (unless skipped)

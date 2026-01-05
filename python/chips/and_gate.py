@@ -22,4 +22,4 @@ def and_gate(a: bool, b: bool) -> bool:
 
     Allowed chips: nand, not_gate
     """
-    raise NotImplementedError("and_gate")
+    return not_gate(nand(a, b))

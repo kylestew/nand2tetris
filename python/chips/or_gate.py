@@ -24,4 +24,4 @@ def or_gate(a: bool, b: bool) -> bool:
     Allowed chips: nand, not_gate, and_gate
     Hint: De Morgan's law is interesting here
     """
-    raise NotImplementedError("or_gate")
+    return nand(not_gate(a), not_gate(b))

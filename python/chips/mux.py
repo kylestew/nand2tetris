@@ -32,4 +32,4 @@ def mux(a: bool, b: bool, sel: bool) -> bool:
 
     Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate
     """
-    raise NotImplementedError("mux")
+    return or_gate(and_gate(a, not_gate(sel)), and_gate(b, sel))
