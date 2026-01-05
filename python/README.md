@@ -14,17 +14,17 @@ You cannot use Python's boolean operators (`and`, `or`, `not`) or bitwise operat
 
 ```bash
 # Run all tests to see your progress
-python test_harness.py
+python verify.py
 
 # Test a specific chip
-python test_harness.py not
-python test_harness.py mux16
+python verify.py not
+python verify.py mux16
 
 # Lint only (check for forbidden constructs)
-python test_harness.py --lint-only
+python verify.py --lint-only
 
 # Start over from scratch
-python test_harness.py --restart
+python verify.py --restart
 ```
 
 ## Project Structure
@@ -39,7 +39,7 @@ python/
 │   └── ...
 ├── stubs/                # Original templates (for --restart)
 ├── chip_linter.py        # AST-based rule enforcement
-├── test_harness.py       # Test runner
+├── verify.py             # Test runner
 └── README.md
 ```
 
@@ -70,7 +70,7 @@ Work through these in order. Each chip can only use chips that come before it.
 1. Open the chip file in `chips/` directory
 2. Read the docstring for the truth table and hints
 3. Replace `pass` with your implementation
-4. Run `python test_harness.py` to check your work
+4. Run `python verify.py` to check your work
 
 ### Example: Implementing NOT
 
@@ -176,7 +176,7 @@ As you progress, you'll hit milestones:
 If you want to reset and try again:
 
 ```bash
-python test_harness.py --restart
+python verify.py --restart
 ```
 
 This will restore all chip files to their original stub state.

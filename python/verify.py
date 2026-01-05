@@ -7,10 +7,10 @@ Two-phase testing:
 2. TEST - Truth table verification
 
 Usage:
-    python test_harness.py           # Run all tests
-    python test_harness.py not       # Test specific chip
-    python test_harness.py --lint-only   # Lint only
-    python test_harness.py --restart     # Reset all chips to stubs
+    python verify.py           # Run all tests
+    python verify.py not       # Test specific chip
+    python verify.py --lint-only   # Lint only
+    python verify.py --restart     # Reset all chips to stubs
 """
 
 import sys
@@ -45,6 +45,10 @@ MILESTONES = {
     # Chapter 2: Boolean Arithmetic
     17: ("Adders Complete!", "You can now add binary numbers!"),
     20: ("CHAPTER 2 COMPLETE!", "You've built the ALU - the brain of the CPU!"),
+    # Chapter 3: Sequential Logic
+    22: ("Registers Complete!", "You can now store data!"),
+    27: ("RAM Hierarchy Complete!", "You've built 16K of memory from flip-flops!"),
+    28: ("CHAPTER 3 COMPLETE!", "You've mastered sequential logic!"),
 }
 
 
@@ -78,6 +82,11 @@ def make_bus8(*bits: int) -> tuple[bool, ...]:
         n = bits[0]
         return tuple((n >> i) & 1 == 1 for i in range(8))
     return tuple(bool(b) for b in bits) + (False,) * (8 - len(bits))
+
+
+def make_bus(width: int, value: int) -> tuple[bool, ...]:
+    """Create a bus of given width from an integer value."""
+    return tuple((value >> i) & 1 == 1 for i in range(width))
 
 
 # All zeros and all ones for 16-bit
@@ -704,6 +713,364 @@ CHIP_TESTS: list[ChipTest] = [
 
 
 # =============================================================================
+# CHAPTER 3: SEQUENTIAL LOGIC TESTS
+# =============================================================================
+
+
+@dataclass
+class SequentialTest:
+    """Test specification for a sequential chip."""
+
+    name: str
+    class_name: str
+    test_func: Callable  # Function that runs the test scenario
+    description: str
+
+
+def run_bit_test() -> tuple[bool, str]:
+    """Test the Bit (1-bit register) chip."""
+    from chips.clock import Clock
+    from chips.bit import Bit
+
+    Clock.get().reset()
+
+    try:
+        bit = Bit()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    # Initial state should be False
+    out = bit(inp=False, load=False)
+    if out != False:
+        return False, f"Initial state should be False, got {out}"
+
+    # Load True
+    bit(inp=True, load=True)
+    Clock.get().tick()
+
+    out = bit(inp=False, load=False)
+    if out != True:
+        return False, f"After loading True, should output True, got {out}"
+
+    # Hold value (load=False)
+    bit(inp=False, load=False)
+    Clock.get().tick()
+
+    out = bit(inp=False, load=False)
+    if out != True:
+        return False, f"Should hold True when load=False, got {out}"
+
+    # Load False
+    bit(inp=False, load=True)
+    Clock.get().tick()
+
+    out = bit(inp=True, load=False)
+    if out != False:
+        return False, f"After loading False, should output False, got {out}"
+
+    return True, "All scenarios passed"
+
+
+def run_register_test() -> tuple[bool, str]:
+    """Test the Register (16-bit register) chip."""
+    from chips.clock import Clock
+    from chips.register import Register
+
+    Clock.get().reset()
+
+    try:
+        reg = Register()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    value1 = make_bus16(0x1234)
+    value2 = make_bus16(0xABCD)
+
+    # Initial state should be all zeros
+    out = reg(inp=ZEROS16, load=False)
+    if out != ZEROS16:
+        return False, "Initial state should be all zeros"
+
+    # Load value1
+    reg(inp=value1, load=True)
+    Clock.get().tick()
+
+    out = reg(inp=ZEROS16, load=False)
+    if out != value1:
+        return False, "After loading 0x1234, should output 0x1234"
+
+    # Hold value (load=False)
+    reg(inp=value2, load=False)
+    Clock.get().tick()
+
+    out = reg(inp=ZEROS16, load=False)
+    if out != value1:
+        return False, "Should hold value when load=False"
+
+    # Load value2
+    reg(inp=value2, load=True)
+    Clock.get().tick()
+
+    out = reg(inp=ZEROS16, load=False)
+    if out != value2:
+        return False, "After loading 0xABCD, should output 0xABCD"
+
+    return True, "All scenarios passed"
+
+
+def run_ram8_test() -> tuple[bool, str]:
+    """Test the RAM8 (8-register RAM) chip."""
+    from chips.clock import Clock
+    from chips.ram8 import RAM8
+
+    Clock.get().reset()
+
+    try:
+        ram = RAM8()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    addr0 = (False, False, False)
+    addr3 = (True, True, False)
+    addr7 = (True, True, True)
+
+    val0 = make_bus16(0x1111)
+    val3 = make_bus16(0x3333)
+    val7 = make_bus16(0x7777)
+
+    # Write to addresses
+    ram(inp=val0, load=True, address=addr0)
+    Clock.get().tick()
+    ram(inp=val3, load=True, address=addr3)
+    Clock.get().tick()
+    ram(inp=val7, load=True, address=addr7)
+    Clock.get().tick()
+
+    # Read back and verify
+    if ram(inp=ZEROS16, load=False, address=addr0) != val0:
+        return False, "Address 0 should contain 0x1111"
+    if ram(inp=ZEROS16, load=False, address=addr3) != val3:
+        return False, "Address 3 should contain 0x3333"
+    if ram(inp=ZEROS16, load=False, address=addr7) != val7:
+        return False, "Address 7 should contain 0x7777"
+
+    return True, "All scenarios passed"
+
+
+def run_ram64_test() -> tuple[bool, str]:
+    """Test the RAM64 chip."""
+    from chips.clock import Clock
+    from chips.ram64 import RAM64
+
+    Clock.get().reset()
+
+    try:
+        ram = RAM64()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    addr0 = make_bus(6, 0)
+    addr31 = make_bus(6, 31)
+    addr63 = make_bus(6, 63)
+
+    val31 = make_bus16(0x1F1F)
+    val63 = make_bus16(0x3F3F)
+
+    ram(inp=val31, load=True, address=addr31)
+    Clock.get().tick()
+    ram(inp=val63, load=True, address=addr63)
+    Clock.get().tick()
+
+    if ram(inp=ZEROS16, load=False, address=addr0) != ZEROS16:
+        return False, "Address 0 should be zeros"
+    if ram(inp=ZEROS16, load=False, address=addr31) != val31:
+        return False, "Address 31 mismatch"
+    if ram(inp=ZEROS16, load=False, address=addr63) != val63:
+        return False, "Address 63 mismatch"
+
+    return True, "All scenarios passed"
+
+
+def run_ram512_test() -> tuple[bool, str]:
+    """Test the RAM512 chip."""
+    from chips.clock import Clock
+    from chips.ram512 import RAM512
+
+    Clock.get().reset()
+
+    try:
+        ram = RAM512()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    addr255 = make_bus(9, 255)
+    val = make_bus16(0xBEEF)
+
+    ram(inp=val, load=True, address=addr255)
+    Clock.get().tick()
+
+    if ram(inp=ZEROS16, load=False, address=addr255) != val:
+        return False, "Address 255 mismatch"
+
+    return True, "All scenarios passed"
+
+
+def run_ram4k_test() -> tuple[bool, str]:
+    """Test the RAM4K chip."""
+    from chips.clock import Clock
+    from chips.ram4k import RAM4K
+
+    Clock.get().reset()
+
+    try:
+        ram = RAM4K()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    addr = make_bus(12, 2048)
+    val = make_bus16(0xCAFE)
+
+    ram(inp=val, load=True, address=addr)
+    Clock.get().tick()
+
+    if ram(inp=ZEROS16, load=False, address=addr) != val:
+        return False, "Address 2048 mismatch"
+
+    return True, "All scenarios passed"
+
+
+def run_ram16k_test() -> tuple[bool, str]:
+    """Test the RAM16K chip."""
+    from chips.clock import Clock
+    from chips.ram16k import RAM16K
+
+    Clock.get().reset()
+
+    try:
+        ram = RAM16K()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    addr = make_bus(14, 8192)
+    val = make_bus16(0xDEAD)
+
+    ram(inp=val, load=True, address=addr)
+    Clock.get().tick()
+
+    if ram(inp=ZEROS16, load=False, address=addr) != val:
+        return False, "Address 8192 mismatch"
+
+    return True, "All scenarios passed"
+
+
+def run_pc_test() -> tuple[bool, str]:
+    """Test the PC (Program Counter) chip."""
+    from chips.clock import Clock
+    from chips.pc import PC
+
+    Clock.get().reset()
+
+    try:
+        pc = PC()
+    except NotImplementedError:
+        return False, "NotImplementedError"
+
+    # Initial state should be 0
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != ZEROS16:
+        return False, "Initial state should be 0"
+
+    # Increment
+    pc(inp=ZEROS16, load=False, inc=True, reset=False)
+    Clock.get().tick()
+
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != make_bus16(1):
+        return False, "After inc, should be 1"
+
+    # Increment again
+    pc(inp=ZEROS16, load=False, inc=True, reset=False)
+    Clock.get().tick()
+
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != make_bus16(2):
+        return False, "After inc, should be 2"
+
+    # Load a value
+    load_val = make_bus16(100)
+    pc(inp=load_val, load=True, inc=False, reset=False)
+    Clock.get().tick()
+
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != load_val:
+        return False, "After load, should be 100"
+
+    # Reset
+    pc(inp=ZEROS16, load=False, inc=False, reset=True)
+    Clock.get().tick()
+
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != ZEROS16:
+        return False, "After reset, should be 0"
+
+    # Test priority: reset > load > inc
+    pc(inp=load_val, load=True, inc=True, reset=True)
+    Clock.get().tick()
+
+    out = pc(inp=ZEROS16, load=False, inc=False, reset=False)
+    if out != ZEROS16:
+        return False, "Reset should have priority over load and inc"
+
+    return True, "All scenarios passed"
+
+
+SEQUENTIAL_TESTS: list[SequentialTest] = [
+    SequentialTest(
+        name="bit",
+        class_name="Bit",
+        test_func=run_bit_test,
+        description="1-bit Register",
+    ),
+    SequentialTest(
+        name="register",
+        class_name="Register",
+        test_func=run_register_test,
+        description="16-bit Register",
+    ),
+    SequentialTest(
+        name="ram8",
+        class_name="RAM8",
+        test_func=run_ram8_test,
+        description="8-Register RAM",
+    ),
+    SequentialTest(
+        name="ram64",
+        class_name="RAM64",
+        test_func=run_ram64_test,
+        description="64-Register RAM",
+    ),
+    SequentialTest(
+        name="ram512",
+        class_name="RAM512",
+        test_func=run_ram512_test,
+        description="512-Register RAM",
+    ),
+    SequentialTest(
+        name="ram4k", class_name="RAM4K", test_func=run_ram4k_test, description="4K RAM"
+    ),
+    SequentialTest(
+        name="ram16k",
+        class_name="RAM16K",
+        test_func=run_ram16k_test,
+        description="16K RAM",
+    ),
+    SequentialTest(
+        name="pc", class_name="PC", test_func=run_pc_test, description="Program Counter"
+    ),
+]
+
+
+# =============================================================================
 # TEST RUNNER
 # =============================================================================
 
@@ -795,6 +1162,49 @@ def test_chip(test: ChipTest) -> TestResult:
     )
 
 
+def test_sequential_chip(test: SequentialTest) -> TestResult:
+    """Test a sequential chip using its test scenario."""
+    from chips.clock import Clock
+
+    Clock.reset_instance()
+
+    try:
+        passed, message = test.test_func()
+
+        if "NotImplementedError" in message:
+            return TestResult(
+                name=test.name,
+                passed=False,
+                total_cases=1,
+                passed_cases=0,
+                not_implemented=True,
+            )
+
+        return TestResult(
+            name=test.name,
+            passed=passed,
+            total_cases=1,
+            passed_cases=1 if passed else 0,
+            error=None if passed else message,
+        )
+    except NotImplementedError:
+        return TestResult(
+            name=test.name,
+            passed=False,
+            total_cases=1,
+            passed_cases=0,
+            not_implemented=True,
+        )
+    except Exception as e:
+        return TestResult(
+            name=test.name,
+            passed=False,
+            total_cases=1,
+            passed_cases=0,
+            error=f"{type(e).__name__}: {e}",
+        )
+
+
 # =============================================================================
 # DISPLAY
 # =============================================================================
@@ -838,62 +1248,56 @@ def print_header():
     """Print the test harness header."""
     print()
     print("=" * 60)
-    print(f"  {Colors.BOLD}NAND2TETRIS - Boolean Logic & Arithmetic{Colors.RESET}")
+    print(
+        f"  {Colors.BOLD}NAND2TETRIS - Build a Computer from First Principles{Colors.RESET}"
+    )
     print("=" * 60)
     print()
 
 
-def print_results(results: list[TestResult]):
+def print_results(comb_results: list[TestResult], seq_results: list[TestResult]):
     """Print test results with progress tracking."""
-    # NAND (index 0) is always provided, so don't count it in user progress
-    user_results = results[1:]  # Skip NAND for progress counting
+    ch2_start = 16  # half_adder
+    ch3_start = 21  # dff (provided)
+
+    # Combine all results
+    all_results = comb_results + seq_results
+
+    # Count user chips (skip nand at index 0 and dff)
+    user_results = [r for i, r in enumerate(all_results) if i not in (0, ch3_start)]
     completed = sum(1 for r in user_results if r.passed)
     total = len(user_results)
 
-    # Find the first failing test (skip NAND at index 0)
-    first_fail_idx = next(
-        (i for i, r in enumerate(results) if not r.passed and i > 0), None
+    # Find first failing test
+    first_fail_idx = None
+    for i, r in enumerate(all_results):
+        if not r.passed and i not in (0, ch3_start):  # Skip primitives
+            first_fail_idx = i
+            break
+
+    # Print Chapter 1
+    print(f"  {Colors.DIM}── Chapter 1: Boolean Logic ──{Colors.RESET}")
+    for i, result in enumerate(comb_results[:16]):
+        _print_chip_line(i, result, i == first_fail_idx, is_primitive=(i == 0))
+
+    # Print Chapter 2
+    print()
+    print(f"  {Colors.DIM}── Chapter 2: Boolean Arithmetic ──{Colors.RESET}")
+    for i, result in enumerate(comb_results[16:]):
+        idx = i + 16
+        _print_chip_line(idx, result, idx == first_fail_idx)
+
+    # Print Chapter 3
+    print()
+    print(f"  {Colors.DIM}── Chapter 3: Sequential Logic ──{Colors.RESET}")
+    # First show DFF as provided
+    print(
+        f"  {Colors.CYAN}[★]{Colors.RESET} {ch3_start}. {'dff'.ljust(12)} {Colors.CYAN}PROVIDED (the memory primitive){Colors.RESET}"
     )
 
-    # Chapter 2 starts at index 16 (half_adder)
-    chapter2_start = 16
-
-    for i, result in enumerate(results):
-        # Print chapter headers
-        if i == 0:
-            print(f"  {Colors.DIM}── Chapter 1: Boolean Logic ──{Colors.RESET}")
-        elif i == chapter2_start:
-            print()
-            print(f"  {Colors.DIM}── Chapter 2: Boolean Arithmetic ──{Colors.RESET}")
-
-        num = i  # NAND is 0, NOT is 1, etc.
-        name = result.name.ljust(12)
-
-        # Special handling for NAND (the primitive)
-        if result.name == "nand":
-            status = f"{Colors.CYAN}PROVIDED (the primitive){Colors.RESET}"
-            marker = f"{Colors.CYAN}[★]{Colors.RESET}"
-            print(f"  {marker}  {num}. {name} {status}")
-            continue
-
-        if result.passed:
-            status = f"{Colors.GREEN}PASSED{Colors.RESET}"
-            marker = f"{Colors.GREEN}[✓]{Colors.RESET}"
-        elif result.not_implemented:
-            status = f"{Colors.DIM}not yet implemented{Colors.RESET}"
-            marker = f"{Colors.DIM}[ ]{Colors.RESET}"
-        elif result.error:
-            status = f"{Colors.RED}ERROR: {result.error}{Colors.RESET}"
-            marker = f"{Colors.RED}[✗]{Colors.RESET}"
-        else:
-            status = f"{Colors.YELLOW}FAILED ({result.passed_cases}/{result.total_cases} cases){Colors.RESET}"
-            marker = f"{Colors.YELLOW}[→]{Colors.RESET}"
-
-        # Current chip indicator
-        if i == first_fail_idx:
-            print(f"  {marker} {num:2}. {Colors.BOLD}{name}{Colors.RESET} {status}")
-        else:
-            print(f"  {marker} {num:2}. {name} {status}")
+    for i, result in enumerate(seq_results):
+        idx = ch3_start + 1 + i
+        _print_chip_line(idx, result, idx == first_fail_idx)
 
     # Progress bar
     print()
@@ -904,14 +1308,12 @@ def print_results(results: list[TestResult]):
     bar = "█" * filled + "░" * (bar_width - filled)
     print(f"  Progress: [{bar}] {completed}/{total} chips ({pct}%)")
 
-    # Check for milestones (index is chip index in CHIP_TESTS)
-    # Milestone triggers when that chip passes
+    # Check for milestones
     achieved_milestones = []
     for chip_idx, (title, msg) in MILESTONES.items():
-        if chip_idx < len(results) and results[chip_idx].passed:
+        if chip_idx < len(all_results) and all_results[chip_idx].passed:
             achieved_milestones.append((chip_idx, title, msg))
 
-    # Show the most recent achieved milestone
     if achieved_milestones:
         _, title, msg = max(achieved_milestones, key=lambda x: x[0])
         print()
@@ -919,42 +1321,74 @@ def print_results(results: list[TestResult]):
         print(f"    {msg}")
 
     # Next chip hint
-    if first_fail_idx is not None and first_fail_idx < len(CHIP_TESTS):
-        next_chip = CHIP_TESTS[first_fail_idx]
-        print()
-        print(
-            f"  {Colors.DIM}Next: {next_chip.description} ({next_chip.name}.py){Colors.RESET}"
-        )
+    if first_fail_idx is not None:
+        if first_fail_idx < len(comb_results):
+            next_chip = CHIP_TESTS[first_fail_idx]
+            print()
+            print(
+                f"  {Colors.DIM}Next: {next_chip.description} ({next_chip.name}.py){Colors.RESET}"
+            )
+        else:
+            seq_idx = first_fail_idx - ch3_start - 1
+            if 0 <= seq_idx < len(SEQUENTIAL_TESTS):
+                next_chip = SEQUENTIAL_TESTS[seq_idx]
+                print()
+                print(
+                    f"  {Colors.DIM}Next: {next_chip.description} ({next_chip.name}.py){Colors.RESET}"
+                )
 
     print("-" * 60)
     print()
 
 
-def print_single_result(result: TestResult, test: ChipTest):
+def _print_chip_line(
+    idx: int, result: TestResult, is_current: bool, is_primitive: bool = False
+):
+    """Print a single chip result line."""
+    name = result.name.ljust(12)
+
+    if is_primitive:
+        status = f"{Colors.CYAN}PROVIDED (the primitive){Colors.RESET}"
+        marker = f"{Colors.CYAN}[★]{Colors.RESET}"
+    elif result.passed:
+        status = f"{Colors.GREEN}PASSED{Colors.RESET}"
+        marker = f"{Colors.GREEN}[✓]{Colors.RESET}"
+    elif result.not_implemented:
+        status = f"{Colors.DIM}not yet implemented{Colors.RESET}"
+        marker = f"{Colors.DIM}[ ]{Colors.RESET}"
+    elif result.error:
+        err_msg = result.error[:40] if len(result.error) > 40 else result.error
+        status = f"{Colors.RED}ERROR: {err_msg}{Colors.RESET}"
+        marker = f"{Colors.RED}[✗]{Colors.RESET}"
+    else:
+        status = f"{Colors.YELLOW}FAILED ({result.passed_cases}/{result.total_cases}){Colors.RESET}"
+        marker = f"{Colors.YELLOW}[→]{Colors.RESET}"
+
+    if is_current and not is_primitive:
+        print(f"  {marker} {idx:2}. {Colors.BOLD}{name}{Colors.RESET} {status}")
+    else:
+        print(f"  {marker} {idx:2}. {name} {status}")
+
+
+def print_single_result(result: TestResult, description: str):
     """Print result for a single chip test."""
     print()
-    print(f"Testing: {test.description} ({test.name}.py)")
+    print(f"Testing: {description} ({result.name}.py)")
     print("-" * 40)
 
     if result.passed:
-        print(
-            f"{Colors.GREEN}✓ PASSED{Colors.RESET} - All {result.total_cases} test cases passed!"
-        )
+        print(f"{Colors.GREEN}✓ PASSED{Colors.RESET}")
     elif result.not_implemented:
-        print(
-            f"{Colors.YELLOW}○ NOT IMPLEMENTED{Colors.RESET} - Chip raises NotImplementedError"
-        )
-        print(f"  Edit chips/{test.name}.py to implement this chip.")
+        print(f"{Colors.YELLOW}○ NOT IMPLEMENTED{Colors.RESET}")
+        print(f"  Edit chips/{result.name}.py to implement this chip.")
     elif result.error:
         print(f"{Colors.RED}✗ ERROR{Colors.RESET} - {result.error}")
-        # Show failed cases even if there was an error
         if result.failed_cases:
             print_failed_cases(result.failed_cases)
     else:
         print(
-            f"{Colors.YELLOW}✗ FAILED{Colors.RESET} - {result.passed_cases}/{result.total_cases} cases passed"
+            f"{Colors.YELLOW}✗ FAILED{Colors.RESET} - {result.passed_cases}/{result.total_cases}"
         )
-        # Show failed cases
         if result.failed_cases:
             print_failed_cases(result.failed_cases)
     print()
@@ -1064,8 +1498,8 @@ def restart_chips():
 
     reset_count = 0
     for chip_name in CHIP_ORDER:
-        if chip_name == "nand":
-            continue  # Don't reset the primitive
+        if chip_name in ("nand", "clock", "dff"):
+            continue  # Don't reset primitives/infrastructure
 
         stub_file = STUBS_DIR / f"{chip_name}.py"
         chip_file = CHIPS_DIR / f"{chip_name}.py"
@@ -1079,7 +1513,7 @@ def restart_chips():
 
     print()
     print(f"Reset {reset_count} chip(s) to stubs.")
-    print("Run 'python test_harness.py' to begin again.")
+    print("Run 'python verify.py' to begin again.")
     print()
     return True
 
@@ -1092,7 +1526,7 @@ def restart_chips():
 def handle_file_change(filepath: Path):
     """Handle a changed chip file - lint and test it."""
     chip_name = filepath.stem
-    if chip_name in ("__init__", "nand"):
+    if chip_name in ("__init__", "nand", "clock", "dff"):
         return
 
     print(f"\n{'=' * 60}")
@@ -1107,18 +1541,31 @@ def handle_file_change(filepath: Path):
         print(f"\n{Colors.DIM}Watching for changes...{Colors.RESET}")
         return
 
-    # Find and run test for the changed chip
-    test = next((t for t in CHIP_TESTS if t.name == chip_name), None)
-    if test:
-        result = test_chip(test)
-        print_single_result(result, test)
+    # Find and run appropriate test
+    comb_test = next((t for t in CHIP_TESTS if t.name == chip_name), None)
+    seq_test = next((t for t in SEQUENTIAL_TESTS if t.name == chip_name), None)
 
-        # If passed, run all tests to show updated progress
+    if comb_test:
+        result = test_chip(comb_test)
+        print_single_result(result, comb_test.description)
+
         if result.passed:
             print(f"{Colors.GREEN}Running all verifications...{Colors.RESET}\n")
             print_header()
-            all_results = [test_chip(t) for t in CHIP_TESTS]
-            print_results(all_results)
+            comb_results = [test_chip(t) for t in CHIP_TESTS]
+            seq_results = [test_sequential_chip(t) for t in SEQUENTIAL_TESTS]
+            print_results(comb_results, seq_results)
+
+    elif seq_test:
+        result = test_sequential_chip(seq_test)
+        print_single_result(result, seq_test.description)
+
+        if result.passed:
+            print(f"{Colors.GREEN}Running all verifications...{Colors.RESET}\n")
+            print_header()
+            comb_results = [test_chip(t) for t in CHIP_TESTS]
+            seq_results = [test_sequential_chip(t) for t in SEQUENTIAL_TESTS]
+            print_results(comb_results, seq_results)
 
     print(f"{Colors.DIM}Watching for changes...{Colors.RESET}")
 
@@ -1127,8 +1574,9 @@ def watch_mode():
     """Watch chips/ directory and re-run tests on changes."""
     # Show initial status
     print_header()
-    results = [test_chip(test) for test in CHIP_TESTS]
-    print_results(results)
+    comb_results = [test_chip(t) for t in CHIP_TESTS]
+    seq_results = [test_sequential_chip(t) for t in SEQUENTIAL_TESTS]
+    print_results(comb_results, seq_results)
 
     print(f"{Colors.CYAN}Watching chips/ for changes... (Ctrl+C to stop){Colors.RESET}")
     print()
@@ -1168,11 +1616,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python test_harness.py           Run all tests
-  python test_harness.py not       Test specific chip
-  python test_harness.py --watch       Watch mode - re-run on file changes
-  python test_harness.py --lint-only   Lint only, no tests
-  python test_harness.py --restart     Reset all chips to stubs
+  python verify.py           Run all tests
+  python verify.py not       Test specific chip
+  python verify.py --watch   Watch mode
+  python verify.py --restart Reset all chips
         """,
     )
     parser.add_argument(
@@ -1220,35 +1667,43 @@ Examples:
 
     # Single chip test
     if args.chip:
-        # Find the test
         chip_name = args.chip.lower().replace("-", "_")
         # Handle short names
-        if chip_name == "not":
-            chip_name = "not_gate"
-        elif chip_name == "and":
-            chip_name = "and_gate"
-        elif chip_name == "or":
-            chip_name = "or_gate"
-        elif chip_name == "xor":
-            chip_name = "xor_gate"
+        name_map = {
+            "not": "not_gate",
+            "and": "and_gate",
+            "or": "or_gate",
+            "xor": "xor_gate",
+        }
+        chip_name = name_map.get(chip_name, chip_name)
 
-        test = next((t for t in CHIP_TESTS if t.name == chip_name), None)
-        if not test:
+        comb_test = next((t for t in CHIP_TESTS if t.name == chip_name), None)
+        seq_test = next((t for t in SEQUENTIAL_TESTS if t.name == chip_name), None)
+
+        if comb_test:
+            result = test_chip(comb_test)
+            print_single_result(result, comb_test.description)
+            sys.exit(0 if result.passed else 1)
+        elif seq_test:
+            result = test_sequential_chip(seq_test)
+            print_single_result(result, seq_test.description)
+            sys.exit(0 if result.passed else 1)
+        else:
             print(f"Unknown chip: {args.chip}")
-            print(f"Available chips: {', '.join(t.name for t in CHIP_TESTS)}")
+            all_chips = [t.name for t in CHIP_TESTS] + [
+                t.name for t in SEQUENTIAL_TESTS
+            ]
+            print(f"Available chips: {', '.join(all_chips)}")
             sys.exit(1)
-
-        result = test_chip(test)
-        print_single_result(result, test)
-        sys.exit(0 if result.passed else 1)
 
     # Run all tests
     print_header()
 
-    results = [test_chip(test) for test in CHIP_TESTS]
-    print_results(results)
+    comb_results = [test_chip(t) for t in CHIP_TESTS]
+    seq_results = [test_sequential_chip(t) for t in SEQUENTIAL_TESTS]
+    print_results(comb_results, seq_results)
 
-    all_passed = all(r.passed for r in results)
+    all_passed = all(r.passed for r in comb_results + seq_results)
     sys.exit(0 if all_passed else 1)
 
 
