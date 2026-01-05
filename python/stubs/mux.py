@@ -1,7 +1,5 @@
 """
-MUX - Multiplexer (2-way, 1-bit)
-
-Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate
+MUX - 2-way Multiplexer
 """
 
 from chips.nand import nand
@@ -13,10 +11,9 @@ from chips.xor_gate import xor_gate
 
 def mux(a: bool, b: bool, sel: bool) -> bool:
     """
-    Multiplexer - selects between two inputs based on selector.
+    2-way Multiplexer - selects between two inputs.
 
-    If sel=0, output a
-    If sel=1, output b
+    If sel=0, output a. If sel=1, output b.
 
     Truth table:
         a | b | sel | out

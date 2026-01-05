@@ -1,7 +1,5 @@
 """
 MUX8WAY16 - 8-way 16-bit Multiplexer
-
-Allowed chips: all previous chips
 """
 
 from chips.nand import nand
@@ -33,21 +31,11 @@ def mux8way16(
     """
     8-way 16-bit Multiplexer - selects one of eight 16-bit inputs.
 
-    sel[0] is LSB, sel[2] is MSB of selector
+    sel[0] is LSB, sel[2] is MSB:
+        sel=000 -> a, sel=001 -> b, sel=010 -> c, sel=011 -> d
+        sel=100 -> e, sel=101 -> f, sel=110 -> g, sel=111 -> h
 
-    sel = (0,0,0) -> output a
-    sel = (1,0,0) -> output b
-    sel = (0,1,0) -> output c
-    sel = (1,1,0) -> output d
-    sel = (0,0,1) -> output e
-    sel = (1,0,1) -> output f
-    sel = (0,1,1) -> output g
-    sel = (1,1,1) -> output h
-
-    Input:  a-h[16] - eight 16-bit buses
-            sel[3] - 3-bit selector (tuple of 3 bools)
-    Output: out[16] - 16-bit bus
-
-    Allowed chips: all previous chips
+    Inputs: a[16] through h[16], sel[3]
+    Output: out[16]
     """
     raise NotImplementedError("mux8way16")

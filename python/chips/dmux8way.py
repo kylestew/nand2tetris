@@ -1,7 +1,5 @@
 """
 DMUX8WAY - 8-way Demultiplexer
-
-Allowed chips: all previous chips
 """
 
 from chips.nand import nand
@@ -27,21 +25,12 @@ def dmux8way(
     """
     8-way Demultiplexer - routes input to one of eight outputs.
 
-    sel[0] is LSB, sel[2] is MSB of selector
+    sel[0] is LSB, sel[2] is MSB:
+        sel=000 -> a=inp, rest=0
+        sel=001 -> b=inp, rest=0
+        ...
+        sel=111 -> h=inp, rest=0
 
-    sel = (0,0,0) -> {a=inp, b=0, c=0, d=0, e=0, f=0, g=0, h=0}
-    sel = (1,0,0) -> {a=0, b=inp, c=0, d=0, e=0, f=0, g=0, h=0}
-    sel = (0,1,0) -> {a=0, b=0, c=inp, d=0, e=0, f=0, g=0, h=0}
-    sel = (1,1,0) -> {a=0, b=0, c=0, d=inp, e=0, f=0, g=0, h=0}
-    sel = (0,0,1) -> {a=0, b=0, c=0, d=0, e=inp, f=0, g=0, h=0}
-    sel = (1,0,1) -> {a=0, b=0, c=0, d=0, e=0, f=inp, g=0, h=0}
-    sel = (0,1,1) -> {a=0, b=0, c=0, d=0, e=0, f=0, g=inp, h=0}
-    sel = (1,1,1) -> {a=0, b=0, c=0, d=0, e=0, f=0, g=0, h=inp}
-
-    Input:  inp - single bit input
-            sel[3] - 3-bit selector (tuple of 3 bools)
-    Output: (a, b, c, d, e, f, g, h) - eight single bits
-
-    Allowed chips: all previous chips
+    Returns: (a, b, c, d, e, f, g, h)
     """
     raise NotImplementedError("dmux8way")

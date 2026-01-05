@@ -1,7 +1,5 @@
 """
 DMUX4WAY - 4-way Demultiplexer
-
-Allowed chips: all previous chips
 """
 
 from chips.nand import nand
@@ -24,15 +22,12 @@ def dmux4way(inp: bool, sel: tuple[bool, bool]) -> tuple[bool, bool, bool, bool]
     """
     4-way Demultiplexer - routes input to one of four outputs.
 
-    sel[0] is LSB, sel[1] is MSB of selector
+    sel[0] is LSB, sel[1] is MSB:
+        sel=00 -> {a=inp, b=0, c=0, d=0}
+        sel=01 -> {a=0, b=inp, c=0, d=0}
+        sel=10 -> {a=0, b=0, c=inp, d=0}
+        sel=11 -> {a=0, b=0, c=0, d=inp}
 
-    sel = (0,0) -> {a=inp, b=0, c=0, d=0}
-    sel = (1,0) -> {a=0, b=inp, c=0, d=0}
-    sel = (0,1) -> {a=0, b=0, c=inp, d=0}
-    sel = (1,1) -> {a=0, b=0, c=0, d=inp}
-
-    Input:  inp - single bit input
-            sel[2] - 2-bit selector (tuple of 2 bools)
-    Output: (a, b, c, d) - four single bits
+    Returns: (a, b, c, d)
     """
     raise NotImplementedError("dmux4way")

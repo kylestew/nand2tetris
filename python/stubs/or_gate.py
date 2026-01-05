@@ -1,7 +1,5 @@
 """
 OR gate
-
-Allowed chips: nand, not_gate, and_gate
 """
 
 from chips.nand import nand

@@ -1,9 +1,23 @@
 """
 Add16 - 16-bit Adder
-
-Allowed chips: half_adder, full_adder
 """
 
+from chips.nand import nand
+from chips.not_gate import not_gate
+from chips.and_gate import and_gate
+from chips.or_gate import or_gate
+from chips.xor_gate import xor_gate
+from chips.mux import mux
+from chips.dmux import dmux
+from chips.not16 import not16
+from chips.and16 import and16
+from chips.or16 import or16
+from chips.mux16 import mux16
+from chips.or8way import or8way
+from chips.mux4way16 import mux4way16
+from chips.mux8way16 import mux8way16
+from chips.dmux4way import dmux4way
+from chips.dmux8way import dmux8way
 from chips.half_adder import half_adder
 from chips.full_adder import full_adder
 
@@ -18,9 +32,5 @@ def add16(a: tuple[bool, ...], b: tuple[bool, ...]) -> tuple[bool, ...]:
 
     Output:
         out[16]: a + b (overflow is ignored)
-
-    Allowed chips: half_adder, full_adder
-    Hint: Use half_adder for bit 0, chain full_adders for bits 1-15
     """
     raise NotImplementedError("add16")
-

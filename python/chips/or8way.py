@@ -1,7 +1,5 @@
 """
 OR8WAY - 8-way OR gate
-
-Allowed chips: all previous chips
 """
 
 from chips.nand import nand
@@ -21,14 +19,7 @@ def or8way(inp: tuple[bool, ...]) -> bool:
     """
     8-way OR - outputs True if ANY of the 8 input bits is True.
 
-    out = OR(inp[0], inp[1], ..., inp[7])
-        = inp[0] OR inp[1] OR inp[2] OR inp[3] OR inp[4] OR inp[5] OR inp[6] OR inp[7]
-
-    Input:  inp[8] - 8-bit bus (tuple of 8 bools)
-    Output: out - single bit
-
-    Indexing: inp[0] is LSB, inp[7] is MSB
-
-    Allowed chips: all previous chips
+    Input: inp[8] (8-bit bus)
+    Output: OR(inp[0], inp[1], ..., inp[7])
     """
     raise NotImplementedError("or8way")

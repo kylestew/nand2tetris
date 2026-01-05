@@ -1,7 +1,5 @@
 """
 AND gate
-
-Allowed chips: nand, not_gate
 """
 
 from chips.nand import nand
@@ -19,7 +17,5 @@ def and_gate(a: bool, b: bool) -> bool:
         0 | 1 |  0
         1 | 0 |  0
         1 | 1 |  1
-
-    Allowed chips: nand, not_gate
     """
-    return not_gate(nand(a, b))
+    raise NotImplementedError("and_gate")

@@ -2,17 +2,28 @@
 ALU - Arithmetic Logic Unit
 
 The centerpiece of the Hack CPU.
-
-Allowed chips: mux16, not16, and16, add16, or8way, or_gate, not_gate
 """
 
-from chips.mux16 import mux16
+from chips.nand import nand
+from chips.not_gate import not_gate
+from chips.and_gate import and_gate
+from chips.or_gate import or_gate
+from chips.xor_gate import xor_gate
+from chips.mux import mux
+from chips.dmux import dmux
 from chips.not16 import not16
 from chips.and16 import and16
-from chips.add16 import add16
+from chips.or16 import or16
+from chips.mux16 import mux16
 from chips.or8way import or8way
-from chips.or_gate import or_gate
-from chips.not_gate import not_gate
+from chips.mux4way16 import mux4way16
+from chips.mux8way16 import mux8way16
+from chips.dmux4way import dmux4way
+from chips.dmux8way import dmux8way
+from chips.half_adder import half_adder
+from chips.full_adder import full_adder
+from chips.add16 import add16
+from chips.inc16 import inc16
 
 
 def alu(
@@ -63,16 +74,5 @@ def alu(
          0  0  0  1  1  1 | y-x
          0  0  0  0  0  0 | x&y
          0  1  0  1  0  1 | x|y
-
-    Allowed chips: mux16, not16, and16, add16, or8way, or_gate, not_gate
-
-    Implementation approach:
-        1. Transform x: if zx then x=0, if nx then x=!x
-        2. Transform y: if zy then y=0, if ny then y=!y
-        3. Compute: if f then out=x+y else out=x&y
-        4. Transform out: if no then out=!out
-        5. Compute zr: out == 0 (OR all bits, then NOT)
-        6. Compute ng: out[15] (MSB, the sign bit)
     """
     raise NotImplementedError("alu")
-

@@ -1,7 +1,5 @@
 """
-DMUX - Demultiplexer (2-way)
-
-Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux
+DMUX - 2-way Demultiplexer
 """
 
 from chips.nand import nand
@@ -14,10 +12,9 @@ from chips.mux import mux
 
 def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
     """
-    Demultiplexer - routes input to one of two outputs based on selector.
+    2-way Demultiplexer - routes input to one of two outputs.
 
-    If sel=0, {a=inp, b=0}
-    If sel=1, {a=0, b=inp}
+    If sel=0, {a=inp, b=0}. If sel=1, {a=0, b=inp}.
 
     Truth table:
         inp | sel | a | b
@@ -27,8 +24,6 @@ def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
          0  |  1  | 0 | 0
          1  |  1  | 0 | 1
 
-    Returns: (a, b) tuple
-
-    Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux
+    Returns: (a, b)
     """
-    return (and_gate(inp, not_gate(sel)), and_gate(inp, sel))
+    raise NotImplementedError("dmux")

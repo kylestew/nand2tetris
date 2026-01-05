@@ -1,7 +1,5 @@
 """
 NOT16 - 16-bit NOT gate
-
-Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux, dmux
 """
 
 from chips.nand import nand
@@ -13,15 +11,11 @@ from chips.mux import mux
 from chips.dmux import dmux
 
 
-def not16(a: tuple[bool, ...]) -> tuple[bool, ...]:
+def not16(inp: tuple[bool, ...]) -> tuple[bool, ...]:
     """
-    16-bit NOT - applies NOT to each bit of a 16-bit input.
+    16-bit NOT - inverts all 16 bits.
 
-    For i = 0..15: out[i] = NOT(a[i])
-
-    Input:  a[16] - 16-bit bus (tuple of 16 bools)
-    Output: out[16] - 16-bit bus
-
-    Indexing: a[0] is LSB, a[15] is MSB
+    Input: inp[16] (LSB first)
+    Output: out[16] where out[i] = NOT(inp[i])
     """
     raise NotImplementedError("not16")

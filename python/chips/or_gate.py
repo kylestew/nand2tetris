@@ -1,7 +1,5 @@
 """
 OR gate
-
-Allowed chips: nand, not_gate, and_gate
 """
 
 from chips.nand import nand
@@ -21,7 +19,6 @@ def or_gate(a: bool, b: bool) -> bool:
         1 | 0 |  1
         1 | 1 |  1
 
-    Allowed chips: nand, not_gate, and_gate
     Hint: De Morgan's law is interesting here
     """
-    return nand(not_gate(a), not_gate(b))
+    raise NotImplementedError("or_gate")

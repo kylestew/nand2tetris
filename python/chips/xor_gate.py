@@ -1,7 +1,5 @@
 """
 XOR gate - Exclusive OR
-
-Allowed chips: nand, not_gate, and_gate, or_gate
 """
 
 from chips.nand import nand
@@ -12,7 +10,7 @@ from chips.or_gate import or_gate
 
 def xor_gate(a: bool, b: bool) -> bool:
     """
-    XOR gate (exclusive or) - outputs True when inputs are DIFFERENT.
+    XOR gate - outputs True when inputs are DIFFERENT.
 
     Truth table:
         a | b | out
@@ -21,7 +19,5 @@ def xor_gate(a: bool, b: bool) -> bool:
         0 | 1 |  1
         1 | 0 |  1
         1 | 1 |  0
-
-    Allowed chips: nand, not_gate, and_gate, or_gate
     """
-    return and_gate(or_gate(a, b), nand(a, b))
+    raise NotImplementedError("xor_gate")

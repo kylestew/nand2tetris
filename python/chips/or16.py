@@ -1,7 +1,5 @@
 """
 OR16 - 16-bit OR gate
-
-Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux, dmux, not16, and16
 """
 
 from chips.nand import nand
@@ -17,15 +15,9 @@ from chips.and16 import and16
 
 def or16(a: tuple[bool, ...], b: tuple[bool, ...]) -> tuple[bool, ...]:
     """
-    16-bit OR - applies OR to each pair of bits.
+    16-bit OR - ORs corresponding bits.
 
-    For i = 0..15: out[i] = OR(a[i], b[i])
-
-    Input:  a[16], b[16] - two 16-bit buses
-    Output: out[16] - 16-bit bus
-
-    Indexing: [0] is LSB, [15] is MSB
-
-    Allowed chips: all basic gates, not16, and16
+    Inputs: a[16], b[16] (LSB first)
+    Output: out[16] where out[i] = OR(a[i], b[i])
     """
     raise NotImplementedError("or16")

@@ -1,7 +1,5 @@
 """
 MUX4WAY16 - 4-way 16-bit Multiplexer
-
-Allowed chips: all previous chips
 """
 
 from chips.nand import nand
@@ -28,17 +26,13 @@ def mux4way16(
     """
     4-way 16-bit Multiplexer - selects one of four 16-bit inputs.
 
-    sel[0] is LSB, sel[1] is MSB of selector
+    sel[0] is LSB, sel[1] is MSB:
+        sel=00 -> a
+        sel=01 -> b
+        sel=10 -> c
+        sel=11 -> d
 
-    sel = (0,0) -> output a
-    sel = (1,0) -> output b
-    sel = (0,1) -> output c
-    sel = (1,1) -> output d
-
-    Input:  a[16], b[16], c[16], d[16] - four 16-bit buses
-            sel[2] - 2-bit selector (tuple of 2 bools)
-    Output: out[16] - 16-bit bus
-
-    Allowed chips: all previous chips
+    Inputs: a[16], b[16], c[16], d[16], sel[2]
+    Output: out[16]
     """
     raise NotImplementedError("mux4way16")

@@ -1,7 +1,5 @@
 """
 MUX16 - 16-bit Multiplexer
-
-Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux, dmux, not16, and16, or16
 """
 
 from chips.nand import nand
@@ -20,15 +18,9 @@ def mux16(a: tuple[bool, ...], b: tuple[bool, ...], sel: bool) -> tuple[bool, ..
     """
     16-bit Multiplexer - selects between two 16-bit inputs.
 
-    If sel=0, output a[16]
-    If sel=1, output b[16]
+    If sel=0, output a. If sel=1, output b.
 
-    For i = 0..15: out[i] = MUX(a[i], b[i], sel)
-
-    Input:  a[16], b[16] - two 16-bit buses
-            sel - single bit selector
-    Output: out[16] - 16-bit bus
-
-    Indexing: [0] is LSB, [15] is MSB
+    Inputs: a[16], b[16], sel
+    Output: out[16]
     """
     raise NotImplementedError("mux16")

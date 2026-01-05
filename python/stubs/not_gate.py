@@ -1,7 +1,5 @@
 """
 NOT gate - Inverter
-
-Allowed chips: nand
 """
 
 from chips.nand import nand
