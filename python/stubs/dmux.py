@@ -28,7 +28,5 @@ def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
          1  |  1  | 0 | 1
 
     Returns: (a, b) tuple
-
-    Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate, mux
     """
     raise NotImplementedError("dmux")

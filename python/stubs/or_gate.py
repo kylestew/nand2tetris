@@ -21,7 +21,6 @@ def or_gate(a: bool, b: bool) -> bool:
         1 | 0 |  1
         1 | 1 |  1
 
-    Allowed chips: nand, not_gate, and_gate
     Hint: De Morgan's law is interesting here
     """
     raise NotImplementedError("or_gate")

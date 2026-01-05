@@ -21,7 +21,5 @@ def xor_gate(a: bool, b: bool) -> bool:
         0 | 1 |  1
         1 | 0 |  1
         1 | 1 |  0
-
-    Allowed chips: nand, not_gate, and_gate, or_gate
     """
     raise NotImplementedError("xor_gate")

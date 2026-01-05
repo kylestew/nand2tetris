@@ -25,7 +25,5 @@ def or16(a: tuple[bool, ...], b: tuple[bool, ...]) -> tuple[bool, ...]:
     Output: out[16] - 16-bit bus
 
     Indexing: [0] is LSB, [15] is MSB
-
-    Allowed chips: all basic gates, not16, and16
     """
     raise NotImplementedError("or16")

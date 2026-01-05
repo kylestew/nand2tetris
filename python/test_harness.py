@@ -42,6 +42,9 @@ MILESTONES = {
     ),
     10: ("16-bit Operations Unlocked!", "Your chips now handle 16-bit words."),
     15: ("CHAPTER 1 COMPLETE!", "You've built ALL Boolean logic chips from scratch!"),
+    # Chapter 2: Boolean Arithmetic
+    17: ("Adders Complete!", "You can now add binary numbers!"),
+    20: ("CHAPTER 2 COMPLETE!", "You've built the ALU - the brain of the CPU!"),
 }
 
 
@@ -393,6 +396,310 @@ CHIP_TESTS: list[ChipTest] = [
         ],
         description="8-way Demultiplexer",
     ),
+    # =========================================================================
+    # CHAPTER 2: BOOLEAN ARITHMETIC
+    # =========================================================================
+    # 16. HALF ADDER
+    ChipTest(
+        name="half_adder",
+        func_name="half_adder",
+        truth_table=[
+            # a, b -> (sum, carry)
+            (False, False, (False, False)),
+            (False, True, (True, False)),
+            (True, False, (True, False)),
+            (True, True, (False, True)),
+        ],
+        description="Half Adder",
+    ),
+    # 17. FULL ADDER
+    ChipTest(
+        name="full_adder",
+        func_name="full_adder",
+        truth_table=[
+            # a, b, c -> (sum, carry)
+            (False, False, False, (False, False)),
+            (False, False, True, (True, False)),
+            (False, True, False, (True, False)),
+            (False, True, True, (False, True)),
+            (True, False, False, (True, False)),
+            (True, False, True, (False, True)),
+            (True, True, False, (False, True)),
+            (True, True, True, (True, True)),
+        ],
+        description="Full Adder",
+    ),
+    # 18. ADD16
+    ChipTest(
+        name="add16",
+        func_name="add16",
+        truth_table=[
+            # a[16], b[16] -> out[16]
+            (make_bus16(0), make_bus16(0), make_bus16(0)),  # 0 + 0 = 0
+            (make_bus16(0), make_bus16(1), make_bus16(1)),  # 0 + 1 = 1
+            (make_bus16(1), make_bus16(1), make_bus16(2)),  # 1 + 1 = 2
+            (make_bus16(1), make_bus16(2), make_bus16(3)),  # 1 + 2 = 3
+            (
+                make_bus16(0x00FF),
+                make_bus16(0x0001),
+                make_bus16(0x0100),
+            ),  # 255 + 1 = 256
+            (make_bus16(0xFFFF), make_bus16(0x0001), make_bus16(0)),  # Overflow wraps
+            (make_bus16(0x1234), make_bus16(0x4321), make_bus16(0x5555)),
+        ],
+        description="16-bit Adder",
+    ),
+    # 19. INC16
+    ChipTest(
+        name="inc16",
+        func_name="inc16",
+        truth_table=[
+            # inp[16] -> out[16]
+            (make_bus16(0), make_bus16(1)),  # 0 + 1 = 1
+            (make_bus16(1), make_bus16(2)),  # 1 + 1 = 2
+            (make_bus16(0x00FF), make_bus16(0x0100)),  # 255 + 1 = 256
+            (make_bus16(0xFFFE), make_bus16(0xFFFF)),  # 65534 + 1 = 65535
+            (make_bus16(0xFFFF), make_bus16(0)),  # Overflow wraps to 0
+        ],
+        description="16-bit Incrementer",
+    ),
+    # 20. ALU
+    ChipTest(
+        name="alu",
+        func_name="alu",
+        truth_table=[
+            # x, y, zx, nx, zy, ny, f, no -> (out, zr, ng)
+            # out = 0
+            (
+                make_bus16(0x1234),
+                make_bus16(0x5678),
+                True,
+                False,
+                True,
+                False,
+                True,
+                False,
+                (make_bus16(0), True, False),
+            ),
+            # out = 1
+            (
+                make_bus16(0),
+                make_bus16(0),
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                (make_bus16(1), False, False),
+            ),
+            # out = -1 (0xFFFF)
+            (
+                make_bus16(0),
+                make_bus16(0),
+                True,
+                True,
+                True,
+                False,
+                True,
+                False,
+                (make_bus16(0xFFFF), False, True),
+            ),
+            # out = x
+            (
+                make_bus16(0x1234),
+                make_bus16(0),
+                False,
+                False,
+                True,
+                True,
+                False,
+                False,
+                (make_bus16(0x1234), False, False),
+            ),
+            # out = y
+            (
+                make_bus16(0),
+                make_bus16(0x5678),
+                True,
+                True,
+                False,
+                False,
+                False,
+                False,
+                (make_bus16(0x5678), False, False),
+            ),
+            # out = !x
+            (
+                make_bus16(0x00FF),
+                make_bus16(0),
+                False,
+                False,
+                True,
+                True,
+                False,
+                True,
+                (make_bus16(0xFF00), False, True),
+            ),
+            # out = !y
+            (
+                make_bus16(0),
+                make_bus16(0x00FF),
+                True,
+                True,
+                False,
+                False,
+                False,
+                True,
+                (make_bus16(0xFF00), False, True),
+            ),
+            # out = -x (two's complement)
+            (
+                make_bus16(1),
+                make_bus16(0),
+                False,
+                False,
+                True,
+                True,
+                True,
+                True,
+                (make_bus16(0xFFFF), False, True),
+            ),  # -1 in two's complement
+            # out = -y
+            (
+                make_bus16(0),
+                make_bus16(1),
+                True,
+                True,
+                False,
+                False,
+                True,
+                True,
+                (make_bus16(0xFFFF), False, True),
+            ),  # -1 in two's complement
+            # out = x + 1
+            (
+                make_bus16(0),
+                make_bus16(0),
+                False,
+                True,
+                True,
+                True,
+                True,
+                True,
+                (make_bus16(1), False, False),
+            ),
+            # out = y + 1
+            (
+                make_bus16(0),
+                make_bus16(5),
+                True,
+                True,
+                False,
+                True,
+                True,
+                True,
+                (make_bus16(6), False, False),
+            ),
+            # out = x - 1
+            (
+                make_bus16(5),
+                make_bus16(0),
+                False,
+                False,
+                True,
+                True,
+                True,
+                False,
+                (make_bus16(4), False, False),
+            ),
+            # out = y - 1
+            (
+                make_bus16(0),
+                make_bus16(5),
+                True,
+                True,
+                False,
+                False,
+                True,
+                False,
+                (make_bus16(4), False, False),
+            ),
+            # out = x + y
+            (
+                make_bus16(3),
+                make_bus16(5),
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                (make_bus16(8), False, False),
+            ),
+            # out = x - y
+            (
+                make_bus16(10),
+                make_bus16(3),
+                False,
+                True,
+                False,
+                False,
+                True,
+                True,
+                (make_bus16(7), False, False),
+            ),
+            # out = y - x
+            (
+                make_bus16(3),
+                make_bus16(10),
+                False,
+                False,
+                False,
+                True,
+                True,
+                True,
+                (make_bus16(7), False, False),
+            ),
+            # out = x & y
+            (
+                make_bus16(0xFF00),
+                make_bus16(0x0FF0),
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                (make_bus16(0x0F00), False, False),
+            ),
+            # out = x | y
+            (
+                make_bus16(0xFF00),
+                make_bus16(0x0FF0),
+                False,
+                True,
+                False,
+                True,
+                False,
+                True,
+                (make_bus16(0xFFF0), False, True),
+            ),
+            # Test zr flag (out = 0)
+            (
+                make_bus16(5),
+                make_bus16(5),
+                False,
+                True,
+                False,
+                False,
+                True,
+                True,
+                (make_bus16(0), True, False),
+            ),  # x - y where x == y
+        ],
+        description="Arithmetic Logic Unit (ALU)",
+    ),
 ]
 
 
@@ -531,7 +838,7 @@ def print_header():
     """Print the test harness header."""
     print()
     print("=" * 60)
-    print(f"  {Colors.BOLD}NAND2TETRIS - Chapter 1: Boolean Logic{Colors.RESET}")
+    print(f"  {Colors.BOLD}NAND2TETRIS - Boolean Logic & Arithmetic{Colors.RESET}")
     print("=" * 60)
     print()
 
@@ -548,7 +855,17 @@ def print_results(results: list[TestResult]):
         (i for i, r in enumerate(results) if not r.passed and i > 0), None
     )
 
+    # Chapter 2 starts at index 16 (half_adder)
+    chapter2_start = 16
+
     for i, result in enumerate(results):
+        # Print chapter headers
+        if i == 0:
+            print(f"  {Colors.DIM}── Chapter 1: Boolean Logic ──{Colors.RESET}")
+        elif i == chapter2_start:
+            print()
+            print(f"  {Colors.DIM}── Chapter 2: Boolean Arithmetic ──{Colors.RESET}")
+
         num = i  # NAND is 0, NOT is 1, etc.
         name = result.name.ljust(12)
 

@@ -34,7 +34,5 @@ def dmux4way(inp: bool, sel: tuple[bool, bool]) -> tuple[bool, bool, bool, bool]
     Input:  inp - single bit input
             sel[2] - 2-bit selector (tuple of 2 bools)
     Output: (a, b, c, d) - four single bits
-
-    Allowed chips: all previous chips
     """
     raise NotImplementedError("dmux4way")

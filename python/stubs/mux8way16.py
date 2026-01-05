@@ -47,7 +47,5 @@ def mux8way16(
     Input:  a-h[16] - eight 16-bit buses
             sel[3] - 3-bit selector (tuple of 3 bools)
     Output: out[16] - 16-bit bus
-
-    Allowed chips: all previous chips
     """
     raise NotImplementedError("mux8way16")

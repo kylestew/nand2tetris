@@ -38,7 +38,5 @@ def mux4way16(
     Input:  a[16], b[16], c[16], d[16] - four 16-bit buses
             sel[2] - 2-bit selector (tuple of 2 bools)
     Output: out[16] - 16-bit bus
-
-    Allowed chips: all previous chips
     """
     raise NotImplementedError("mux4way16")

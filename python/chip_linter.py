@@ -21,6 +21,7 @@ from typing import Optional
 
 # Chip order - each chip can only import chips that come before it
 CHIP_ORDER = [
+    # Chapter 1: Boolean Logic
     "nand",
     "not_gate",
     "and_gate",
@@ -37,6 +38,12 @@ CHIP_ORDER = [
     "mux8way16",
     "dmux4way",
     "dmux8way",
+    # Chapter 2: Boolean Arithmetic
+    "half_adder",
+    "full_adder",
+    "add16",
+    "inc16",
+    "alu",
 ]
 
 # Map chip name to allowed imports (all chips before it in order)

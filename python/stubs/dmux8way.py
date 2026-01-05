@@ -41,7 +41,5 @@ def dmux8way(
     Input:  inp - single bit input
             sel[3] - 3-bit selector (tuple of 3 bools)
     Output: (a, b, c, d, e, f, g, h) - eight single bits
-
-    Allowed chips: all previous chips
     """
     raise NotImplementedError("dmux8way")

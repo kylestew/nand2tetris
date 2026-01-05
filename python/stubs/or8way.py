@@ -28,7 +28,5 @@ def or8way(inp: tuple[bool, ...]) -> bool:
     Output: out - single bit
 
     Indexing: inp[0] is LSB, inp[7] is MSB
-
-    Allowed chips: all previous chips
     """
     raise NotImplementedError("or8way")

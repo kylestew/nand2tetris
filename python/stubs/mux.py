@@ -29,7 +29,5 @@ def mux(a: bool, b: bool, sel: bool) -> bool:
         0 | 1 |  1  |  1
         1 | 0 |  1  |  0
         1 | 1 |  1  |  1
-
-    Allowed chips: nand, not_gate, and_gate, or_gate, xor_gate
     """
     raise NotImplementedError("mux")
