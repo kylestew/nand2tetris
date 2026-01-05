@@ -51,5 +51,6 @@ def mux8way16(
     Allowed chips: all previous chips
     Hint: Use mux4way16 twice (for a-d and e-h), then mux16 to select between them.
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("mux8way16")
+

@@ -33,6 +33,6 @@ def dmux(inp: bool, sel: bool) -> tuple[bool, bool]:
     Hint: a = inp AND NOT(sel)
           b = inp AND sel
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("dmux")
 

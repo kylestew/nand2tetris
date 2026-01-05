@@ -34,6 +34,6 @@ def mux16(a: tuple[bool, ...], b: tuple[bool, ...], sel: bool) -> tuple[bool, ..
     Allowed chips: all basic gates, not16, and16, or16
     Hint: Apply mux to each pair of bits with the same sel.
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("mux16")
 

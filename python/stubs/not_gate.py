@@ -20,6 +20,6 @@ def not_gate(a: bool) -> bool:
     Allowed chips: nand
     Hint: What happens when you NAND a signal with itself?
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("not_gate")
 

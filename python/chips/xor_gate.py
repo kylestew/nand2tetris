@@ -25,9 +25,10 @@ def xor_gate(a: bool, b: bool) -> bool:
     Allowed chips: nand, not_gate, and_gate, or_gate
     Hint: XOR = (a OR b) AND NOT(a AND b)
           "One or the other, but not both"
-
+          
     Alternative using only NAND:
           XOR = NAND(NAND(a, NAND(a,b)), NAND(b, NAND(a,b)))
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("xor_gate")
+

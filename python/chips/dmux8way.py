@@ -45,6 +45,6 @@ def dmux8way(
     Allowed chips: all previous chips
     Hint: Use dmux to split into upper/lower half, then dmux4way on each half.
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("dmux8way")
 

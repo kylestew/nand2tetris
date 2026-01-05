@@ -34,6 +34,6 @@ def or8way(inp: tuple[bool, ...]) -> bool:
           OR(OR(OR(inp[0],inp[1]), OR(inp[2],inp[3])), 
              OR(OR(inp[4],inp[5]), OR(inp[6],inp[7])))
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("or8way")
 

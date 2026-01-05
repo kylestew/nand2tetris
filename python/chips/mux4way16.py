@@ -44,6 +44,6 @@ def mux4way16(
           Stage 1: mux16(a, b, sel[0]) and mux16(c, d, sel[0])
           Stage 2: mux16(stage1_result1, stage1_result2, sel[1])
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("mux4way16")
 

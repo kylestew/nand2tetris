@@ -28,5 +28,6 @@ def and16(a: tuple[bool, ...], b: tuple[bool, ...]) -> tuple[bool, ...]:
     Allowed chips: all basic gates, not16
     Hint: Apply and_gate to each pair of bits.
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("and16")
+

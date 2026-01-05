@@ -29,6 +29,6 @@ def xor_gate(a: bool, b: bool) -> bool:
     Alternative using only NAND:
           XOR = NAND(NAND(a, NAND(a,b)), NAND(b, NAND(a,b)))
     """
-    # YOUR IMPLEMENTATION HERE
-    pass
+    # DELETE THIS LINE AND IMPLEMENT:
+    raise NotImplementedError("xor_gate")
 
