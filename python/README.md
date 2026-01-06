@@ -2,11 +2,16 @@
 
 Build a complete computer from first principles, starting with just the NAND gate.
 
-This is a Python-based implementation of Part 1 of the [Nand2Tetris](https://www.nand2tetris.org/) course (Hardware), focusing on Chapter 1: Boolean Logic.
+This is a Python-based implementation of Part 1 of the [Nand2Tetris](https://www.nand2tetris.org/) course (Hardware), covering:
+- **Chapter 1:** Boolean Logic
+- **Chapter 2:** Boolean Arithmetic
+- **Chapter 3:** Sequential Logic
 
 ## The Challenge
 
-**NAND is the only gate provided to you.** Everything else must be built from scratch.
+**NAND is the only logic gate provided to you.** Everything else must be built from scratch.
+
+**DFF is the only memory element provided to you.** All sequential chips are built using it.
 
 You cannot use Python's boolean operators (`and`, `or`, `not`) or bitwise operators (`&`, `|`, `^`, `~`). The system enforces this with an AST linter that runs before every test.
 
@@ -19,6 +24,11 @@ python verify.py
 # Test a specific chip
 python verify.py not
 python verify.py mux16
+python verify.py alu
+python verify.py ram8
+
+# Watch mode (re-runs tests on file changes)
+python verify.py --watch
 
 # Lint only (check for forbidden constructs)
 python verify.py --lint-only
@@ -32,7 +42,9 @@ python verify.py --restart
 ```
 python/
 ├── chips/                 # Your chip implementations (edit these!)
-│   ├── nand.py           # The ONLY primitive (do not edit)
+│   ├── nand.py           # Logic primitive (do not edit)
+│   ├── clock.py          # Clock singleton (do not edit)
+│   ├── dff.py            # Memory primitive (do not edit)
 │   ├── not_gate.py       # ← Start here
 │   ├── and_gate.py
 │   ├── or_gate.py
@@ -65,11 +77,69 @@ Work through these in order. Each chip can only use chips that come before it.
 | 14 | `dmux4way` | 4-way DMUX | all above |
 | 15 | `dmux8way` | 8-way DMUX | all above |
 
+## Chapter 2: Boolean Arithmetic (5 Chips)
+
+Build the computational heart of your computer.
+
+| # | Chip | Description | Can Use |
+|---|------|-------------|---------|
+| 16 | `half_adder` | Adds two bits | all Ch1 chips |
+| 17 | `full_adder` | Adds three bits | half_adder, all Ch1 |
+| 18 | `add16` | 16-bit adder | full_adder, all above |
+| 19 | `inc16` | 16-bit incrementer | add16, all above |
+| 20 | `alu` | Arithmetic Logic Unit | inc16, all above |
+
+The ALU is the crown jewel—it computes 18 different functions on two 16-bit inputs using just 6 control bits.
+
+## Chapter 3: Sequential Logic (8 Chips)
+
+Build memory and stateful components. These chips are **classes** (not functions) because they hold state. You only need to implement:
+- `__init__()` — create components (DFFs, sub-chips)
+- `__call__()` — wire the combinational logic
+
+The DFF handles all clock timing internally—just focus on how signals connect.
+
+| # | Chip | Description | Can Use |
+|---|------|-------------|---------|
+| ★ | `dff` | D Flip-Flop | **PROVIDED** (the memory primitive) |
+| 21 | `bit` | 1-bit register | dff, mux |
+| 22 | `register` | 16-bit register | bit (x16) |
+| 23 | `ram8` | 8-register RAM | register, dmux8way, mux8way16 |
+| 24 | `ram64` | 64-register RAM | ram8 (x8) |
+| 25 | `ram512` | 512-register RAM | ram64 (x8) |
+| 26 | `ram4k` | 4K RAM | ram512 (x8) |
+| 27 | `ram16k` | 16K RAM | ram4k (x4) |
+| 28 | `pc` | Program Counter | register, inc16, mux16 |
+
+### How Sequential Chips Work
+
+Sequential chips store values across clock cycles. The test harness controls timing:
+
+```python
+from chips.clock import Clock
+from chips.bit import Bit
+
+bit = Bit()
+
+# Set input (doesn't change output yet)
+bit(inp=True, load=True)
+
+# Clock tick advances state (handled by test harness)
+Clock.get().tick()
+
+# Now output reflects previous input
+out = bit(inp=False, load=False)  # Returns True
+```
+
+**Key concept:** `out(t) = f(in(t-1))` — output at time t depends on input at time t-1.
+
+**Your job:** Wire the components. **DFF's job:** Handle timing.
+
 ## How to Implement a Chip
 
 1. Open the chip file in `chips/` directory
 2. Read the docstring for the truth table and hints
-3. Replace `pass` with your implementation
+3. Replace `raise NotImplementedError(...)` with your implementation
 4. Run `python verify.py` to check your work
 
 ### Example: Implementing NOT
@@ -94,6 +164,32 @@ def and_gate(a: bool, b: bool) -> bool:
     # AND = NOT(NAND)
     return not_gate(nand(a, b))
 ```
+
+### Example: Implementing Bit (Sequential)
+
+Sequential chips are classes that wire together components. The DFF handles all timing internally—you just specify the connections.
+
+```python
+# chips/bit.py
+from chips.dff import DFF
+from chips.mux import mux
+
+class Bit:
+    def __init__(self):
+        self._dff = DFF()  # DFF auto-registers with Clock
+
+    def __call__(self, inp: bool, load: bool) -> bool:
+        # Read current stored value
+        current = self._dff.state
+        
+        # Wiring: MUX selects between hold (current) or load (inp)
+        dff_input = mux(current, inp, load)
+        
+        # Feed into DFF and return current output
+        return self._dff(dff_input)
+```
+
+Notice there's no `tick()` method—the DFF handles clock synchronization automatically.
 
 ## Data Types
 
@@ -145,6 +241,11 @@ As you progress, you'll hit milestones:
 - **Chips 5-6**: Routing complete! You can select and distribute signals.
 - **Chips 7-10**: 16-bit operations unlocked! Your chips handle words.
 - **Chips 11-15**: CHAPTER 1 COMPLETE! All Boolean logic chips built!
+- **Chips 16-17**: Adders complete! You can now add binary numbers.
+- **Chip 20**: CHAPTER 2 COMPLETE! You've built the ALU—the brain of the CPU!
+- **Chips 21-22**: Registers complete! You can now store data.
+- **Chips 23-27**: RAM hierarchy complete! You've built 16K of memory from flip-flops.
+- **Chip 28**: CHAPTER 3 COMPLETE! You've mastered sequential logic!
 
 ## Tips
 
@@ -152,6 +253,7 @@ As you progress, you'll hit milestones:
 2. **Use truth tables**: Compare your output to expected values
 3. **Think in gates**: Draw the circuit on paper first
 4. **Read the hints**: Each chip file has implementation hints
+5. **Use watch mode**: `python verify.py --watch` for instant feedback
 
 ### Useful Identities
 
@@ -161,15 +263,32 @@ As you progress, you'll hit milestones:
 - `XOR(a, b) = OR(AND(a, NOT(b)), AND(NOT(a), b))`
 - `MUX(a, b, sel) = OR(AND(a, NOT(sel)), AND(b, sel))`
 
+### ALU Control Bits
+
+The ALU uses 6 control bits to compute 18 functions:
+
+| zx | nx | zy | ny | f | no | Output |
+|----|----|----|----|----|-----|--------|
+| 1 | 0 | 1 | 0 | 1 | 0 | 0 |
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| 1 | 1 | 1 | 0 | 1 | 0 | -1 |
+| 0 | 0 | 1 | 1 | 0 | 0 | x |
+| 1 | 1 | 0 | 0 | 0 | 0 | y |
+| 0 | 0 | 1 | 1 | 1 | 0 | x-1 |
+| 0 | 0 | 0 | 0 | 1 | 0 | x+y |
+| 0 | 1 | 0 | 0 | 1 | 1 | x-y |
+
 ## Troubleshooting
 
 **"Import error"**: Make sure you're running from the project root directory.
 
-**"Function returns None"**: You haven't implemented the chip yet (still has `pass`).
+**"Function returns None"**: You haven't implemented the chip yet (still has `raise NotImplementedError`).
 
 **Lint violation**: You used a forbidden construct. Rewrite using only gate functions.
 
 **Test fails**: Check your logic against the truth table in the docstring.
+
+**Sequential chip not working**: Remember that state changes happen on `Clock.get().tick()`, not immediately.
 
 ## Starting Over
 
@@ -191,4 +310,3 @@ This will restore all chip files to their original stub state.
 ---
 
 Good luck! Remember: every computer ever built is made of gates like these.
-
